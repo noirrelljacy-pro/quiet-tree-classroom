@@ -77,7 +77,10 @@ src/engine.ts         与 DOM/音频无关的纯状态规则、输入数学函�
 src/audio.ts          麦克风生命周期、取消与异常映射
 src/calibration.ts    独立的五秒校准器
 src/preferences.ts    容错偏好存储
-src/tree.ts           原创 SVG 与视觉状态映射
+src/tree.ts           原创 SVG、分层叶冠与缓存渲染
+src/visual-model.ts   连续成长与可解释的反馈模型
+src/dom.ts            轻量渲染与重复写入抑制
+src/timing.ts         首帧基准、节流容差与中断边界
 src/strings.ts        状态中文文案，预留语言字典入口
 src/main.ts           页面、会话控制、单一动画循环、事件协调
 src/style.css         响应式与可访问性样式
@@ -92,3 +95,7 @@ docs/                 需求、规则、验证、部署与复盘
 公开仓库：[noirrelljacy-pro/quiet-tree-classroom](https://github.com/noirrelljacy-pro/quiet-tree-classroom)。准备了 PR/主分支检查与 GitHub Pages 部署工作流，操作见 [部署说明](docs/DEPLOYMENT.md)。Pages 构建使用已确认仓库对应的 `/quiet-tree-classroom/` 路径；普通 `npm run build` 使用相对资源便于其他静态托管。部署是否通过以 Actions / Pages 返回结果及验证记录为准。
 
 查看 [实际验证记录与限制](docs/VALIDATION.md)、[需求来源与范围](docs/REQUIREMENTS.md)、[项目复盘](docs/RETROSPECTIVE.md)。
+
+## 视觉与流畅度迭代
+
+已根据 Skill Finder 技能检索和 GitHub 类似项目源码阅读完成一轮优化：树冠连续生长、叶片分批展开、明确阶段、反馈等待进度、短暂声音演示，以及缩放型音量条和重复渲染抑制。[调研来源与取舍](docs/RESEARCH_AND_POLISH.md)记录了实际参考、未采用内容及许可边界。没有新增运行时依赖，也未将开发验证当作课堂效果。
