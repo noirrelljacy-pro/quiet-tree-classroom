@@ -1,4 +1,7 @@
 import { defineConfig } from 'vite';
 
-// Relative assets work at both a repository Pages URL and a custom-domain root.
-export default defineConfig({ base: './' });
+// Verified public repository: https://github.com/noirrelljacy-pro/quiet-tree-classroom
+// A separate mode keeps ordinary static exports portable.
+export default defineConfig(({ mode }) => ({
+  base: mode === 'github-pages' ? '/quiet-tree-classroom/' : './',
+}));

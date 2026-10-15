@@ -9,10 +9,12 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/copy-notices.mjs",
+    "build:pages": "tsc --noEmit && vite build --mode github-pages && node scripts/copy-notices.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "preview:pages": "vite preview --mode github-pages --host 127.0.0.1"
   },
   "devDependencies": {
     "prettier": "^3.9.10",
