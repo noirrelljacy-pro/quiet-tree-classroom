@@ -17,6 +17,8 @@ export const RULES = Object.freeze({
   calibrationSeconds: 5,
   smoothingSeconds: 0.3,
   maxFrameSeconds: 0.25,
+  interruptionSeconds: 2.5,
+  demoPulseSeconds: 0.8,
 });
 export const LIMITS = {
   threshold: [10, 90],
