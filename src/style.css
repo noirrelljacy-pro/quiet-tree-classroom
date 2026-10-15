@@ -1508,3 +1508,22 @@ body.presenting .stages li > span {
     transition: none;
   }
 }
+
+/* Preserve a single readable heading and an unbroken display action in narrow windows. */
+.page-heading > .outline {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+@media (min-width: 481px) and (max-width: 800px) {
+  .page-heading h1 {
+    font-size: clamp(26px, 3.5vw, 30px);
+  }
+  .page-heading {
+    gap: 16px;
+  }
+}
+@media (max-width: 480px) {
+  .page-heading h1 {
+    font-size: 23px;
+  }
+}
