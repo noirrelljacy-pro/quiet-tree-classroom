@@ -5,7 +5,12 @@ let track: {
   onended: (() => void) | null;
   onmute: (() => void) | null;
 };
-let contexts: { close: ReturnType<typeof vi.fn> }[];
+let contexts: {
+  close: ReturnType<typeof vi.fn>;
+  resume: ReturnType<typeof vi.fn>;
+  state: string;
+  onstatechange: (() => void) | null;
+}[];
 beforeEach(() => {
   track = { stop: vi.fn(), onended: null, onmute: null };
   contexts = [];
@@ -64,6 +69,54 @@ it('cleans up after permission denial', async () => {
   const m = new Microphone();
   await expect(m.start()).rejects.toThrow();
   expect(contexts[0].close).toHaveBeenCalledOnce();
+});
+it('never requests a stream if cancelled while audio resume was pending', async () => {
+  let resolve!: () => void;
+  const pendingResume = new Promise<void>((r) => {
+    resolve = r;
+  });
+  const Audio = window.AudioContext;
+  class PendingContext extends Audio {
+    resume = vi.fn().mockReturnValue(pendingResume);
+  }
+  vi.stubGlobal('AudioContext', PendingContext);
+  const m = new Microphone();
+  const pending = m.start();
+  m.stop();
+  resolve();
+  expect(await pending).toBe(false);
+  expect(navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
+});
+it('notifies the controller on device loss and context interruption', async () => {
+  const m = new Microphone();
+  m.onLost = vi.fn();
+  await m.start();
+  track.onended?.();
+  track.onmute?.();
+  contexts[0].state = 'suspended';
+  contexts[0].onstatechange?.();
+  expect(m.onLost).toHaveBeenCalledTimes(3);
+  m.stop();
+});
+it('a stale stream cannot replace a newer active input', async () => {
+  let resolve!: (stream: MediaStream) => void;
+  vi.mocked(navigator.mediaDevices.getUserMedia).mockImplementationOnce(
+    () =>
+      new Promise((r) => {
+        resolve = r;
+      }),
+  );
+  const m = new Microphone();
+  const first = m.start();
+  await Promise.resolve();
+  expect(await m.start()).toBe(true);
+  const oldTrack = { stop: vi.fn() };
+  resolve({ getTracks: () => [oldTrack] } as unknown as MediaStream);
+  expect(await first).toBe(false);
+  expect(oldTrack.stop).toHaveBeenCalledOnce();
+  expect(track.stop).not.toHaveBeenCalled();
+  m.stop();
+  expect(track.stop).toHaveBeenCalledOnce();
 });
 it('rejects insecure origins with next steps', async () => {
   vi.stubGlobal('window', { isSecureContext: false });

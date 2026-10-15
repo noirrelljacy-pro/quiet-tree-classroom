@@ -15,7 +15,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="workspace">
       <section class="garden" aria-label="小树课堂">
         <div class="garden-top"><span id="mode" class="badge">尚未开始</span><span class="round-label">第 <b id="round">01</b> 轮 · 一起慢慢来</span></div>
-        <div class="tree-message"><p class="eyebrow" id="stage">一颗种子，一点期待</p><h2 id="headline"></h2><p id="reason"></p></div>
+        <div class="tree-message"><p class="eyebrow" id="stage">一颗种子，一点期待</p><h2 id="headline" aria-live="polite" aria-atomic="true"></h2><p id="reason"></p></div>
         <div id="tree" class="tree">${treeMarkup()}</div>
         <div class="growth"><div class="growth-caption"><span>本轮成长 <b id="growth-value">0%</b></span><span id="remaining">等待开始</span></div><progress id="growth-progress" value="0" max="100" aria-label="本轮成长进度"></progress><div class="stages"><span>01 幼苗</span><span>02 小树</span><span>03 成熟树</span><span>04 结果</span></div></div>
         <div class="presentation-controls"><button id="present-pause" class="outline">暂停</button><button id="exit-present" class="outline">退出展示</button></div>
@@ -159,7 +159,7 @@ function pause(message = '已暂停，成长与嘈杂计时冻结，麦克风已
   mic.stop();
   if (session === 'calibrating') {
     calibration = null;
-    message = '校准已取消，当前阈值保留。可重新校准或继续本轮。';
+    message += ' 校准已取消，当前阈值保留，可重新校准。';
   }
   session = 'paused';
   notice(message);

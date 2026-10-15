@@ -51,6 +51,8 @@ export class Microphone {
         return false;
       }
       this.stream = stream;
+      if (context.state !== 'running')
+        throw new Error('音频输入已被系统中断。请检查输入设备后点击继续，或使用演示模式。');
       for (const track of stream.getTracks()) {
         track.onended = () => this.onLost();
         track.onmute = () => this.onLost();
