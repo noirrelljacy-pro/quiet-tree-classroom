@@ -47,3 +47,5 @@
 验证记录见 [VALIDATION.md](VALIDATION.md)。真实中低端设备帧率、系统节流、麦克风和课堂教学效果仍需实机/教师验证。后续可在获得匿名试用反馈后调整树冠密度、参数节奏和展示布局。
 
 性能依据：[MDN CSS 与 JavaScript 动画性能](https://developer.mozilla.org/en-US/docs/Web/Performance/Guides/CSS_JavaScript_animation_performance)。加速取决于浏览器、SVG 与具体设备，本项目未作 GPU 加速或帧率保证。
+
+最后复核了浏览器将 1.000 / 0.0deg 序列化为 1 / 0deg 的边界，渲染工具同时缓存期望值与实际序列化值，避免成长期间重复写入相同叶片样式；外部更改样式后仍可正确恢复。对应两项回归使总测试数为 50。

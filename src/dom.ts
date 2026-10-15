@@ -1,9 +1,20 @@
+// Store both the requested spelling and browser serialization (e.g. 1.000 -> 1).
+const styleCache = new WeakMap<object, Map<string, { requested: string; serialized: string }>>();
 // Equality checks avoid repeat mutations. These reads do not measure layout.
 export function setText(node: Element, value: string): void {
   if (node.textContent !== value) node.textContent = value;
 }
 export function setStyle(node: HTMLElement | SVGElement, key: string, value: string): void {
-  if (node.style.getPropertyValue(key) !== value) node.style.setProperty(key, value);
+  let entries = styleCache.get(node);
+  if (!entries) {
+    entries = new Map();
+    styleCache.set(node, entries);
+  }
+  const current = node.style.getPropertyValue(key);
+  const previous = entries.get(key);
+  if (previous?.requested === value && previous.serialized === current) return;
+  if (current !== value) node.style.setProperty(key, value);
+  entries.set(key, { requested: value, serialized: node.style.getPropertyValue(key) });
 }
 export function setAttribute(node: Element, key: string, value: string): void {
   if (node.getAttribute(key) !== value) node.setAttribute(key, value);

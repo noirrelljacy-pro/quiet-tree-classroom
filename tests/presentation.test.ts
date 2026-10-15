@@ -202,3 +202,29 @@ describe('rendering work stays proportional to visual changes', () => {
     expect(nodes.get('title')!.textContent).toContain('果实');
   });
 });
+
+it('does not repeat writes after browser-normalized CSS serialization', () => {
+  let actual = '';
+  const write = vi.fn((_key: string, value: string) => {
+    actual = String(Number(value));
+  });
+  const node = {
+    style: { getPropertyValue: () => actual, setProperty: write },
+  } as unknown as HTMLElement;
+  for (let i = 0; i < 120; i++) setStyle(node, 'opacity', '1.000');
+  expect(write).toHaveBeenCalledOnce();
+});
+it('restores owned styles if another writer changes the serialized value', () => {
+  let actual = '';
+  const write = vi.fn((_key: string, value: string) => {
+    actual = String(Number(value));
+  });
+  const node = {
+    style: { getPropertyValue: () => actual, setProperty: write },
+  } as unknown as HTMLElement;
+  setStyle(node, 'opacity', '1.000');
+  actual = '0';
+  setStyle(node, 'opacity', '1.000');
+  expect(actual).toBe('1');
+  expect(write).toHaveBeenCalledTimes(2);
+});
