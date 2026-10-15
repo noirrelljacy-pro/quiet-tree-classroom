@@ -46,7 +46,7 @@
 - 桌面 1440×900、默认笔记本窗口、768×1024 平板和 390×844 手机；检查截图和 DOM 宽度，未发现横向溢出，窄屏上下堆叠。测试后清除 viewport override。
 - 通过键盘操作成长滑块、确认弹窗焦点；不是完整键盘/屏幕阅读器审计。
 - 真实麦克风启动停留于等待阶段，结束后可进入演示，没有卡死或误标真实课堂正在监测。
-- 最终 Pages 子路径产物能加载资源并运行演示；具体线上验证在发布后补记。
+- 最终 Pages 子路径产物能加载资源并运行演示；部署后也已打开真实 HTTPS 网站、查看完整界面并启动演示。最终本地生产包浏览器错误日志为空。
 
 截图为真实运行界面，保留在交付工作区 artifacts（被 .gitignore 排除），不含课堂或教师图像。
 
@@ -62,4 +62,10 @@
 
 ## 发布记录
 
-已在确认同名仓库不存在后创建公开 GitHub 仓库。首次推送、Actions 与 Pages 的实际运行结果将在发布完成后补记。
+已在确认同名仓库不存在后创建公开 [GitHub 仓库](https://github.com/noirrelljacy-pro/quiet-tree-classroom)，提交并推送主分支，启用 Pages 的 GitHub Actions 来源。
+
+- 首次源码与交付文档提交 `d501f83` 的 [Check 运行](https://github.com/noirrelljacy-pro/quiet-tree-classroom/actions/runs/38776376827) 成功，实际执行 npm ci、类型检查、测试和普通构建。
+- 同提交的 [Pages 运行](https://github.com/noirrelljacy-pro/quiet-tree-classroom/actions/runs/38776376871) 成功，实际执行检查、Pages 构建、上传与部署。
+- [真实网站](https://noirrelljacy-pro.github.io/quiet-tree-classroom/) 已在浏览器中打开，界面与资源正常，演示可启动；Pages API 显示 https_enforced 为 true。
+- 首次运行成功时间为北京时间 2026-10-16 凌晨；GitHub 运行页可能显示 UTC 2026-10-15。后续文档补记会触发工作流，最新状态以仓库 Actions 为准。
+- 本地 Git 仅追踪独立项目，未提交父目录求职材料、机器路径或凭证。没有创建 PR；首次交付直接推送新仓库 main。
