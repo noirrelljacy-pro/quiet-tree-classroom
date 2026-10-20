@@ -7,6 +7,7 @@ import {
   ECONOMY,
   COLLECTION_KEY,
   emptyCollection,
+  demoFromCollection,
   normalizeCollection,
   purchase,
   selectSpecies,
@@ -220,6 +221,17 @@ describe('local collection persistence and cross-tab consistency', () => {
     expect(store.value.coins).toBe(120);
     expect(storage.setItem).not.toHaveBeenCalled();
   });
+});
+it('can demo owned species without carrying over classroom coins or mutable ownership', () => {
+  const classroom = {
+    coins: 120,
+    unlocked: ['camphor', 'pine'] as ('camphor' | 'pine')[],
+    selected: 'pine' as const,
+  };
+  const demo = demoFromCollection(classroom);
+  expect(demo).toEqual({ coins: 0, unlocked: ['camphor', 'pine'], selected: 'pine' });
+  demo.unlocked.push('maple');
+  expect(classroom.unlocked).toEqual(['camphor', 'pine']);
 });
 describe('original species illustrations', () => {
   it('has five distinct silhouettes, each with all growth cohorts and a single accessible title', () => {

@@ -10,6 +10,9 @@ export interface Collection {
 export function emptyCollection(): Collection {
   return { coins: 0, unlocked: [DEFAULT_SPECIES], selected: DEFAULT_SPECIES };
 }
+export function demoFromCollection(collection: Collection): Collection {
+  return { coins: 0, unlocked: [...collection.unlocked], selected: collection.selected };
+}
 export function normalizeCollection(input: unknown): Collection {
   if (!input || typeof input !== 'object') return emptyCollection();
   const v = input as Partial<Collection>;

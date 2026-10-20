@@ -9,6 +9,7 @@ import { SPECIES, DEFAULT_SPECIES, speciesById, isSpecies, type SpeciesId } from
 import {
   browserCollectionStore,
   emptyCollection,
+  demoFromCollection,
   applyCollectionAction,
   ECONOMY,
   COLLECTION_KEY,
@@ -89,6 +90,7 @@ const mic = new Microphone();
 const clock = new FrameClock();
 const collectionStore = browserCollectionStore();
 let demoCollection = emptyCollection();
+let demoInitialized = false;
 let plantedSpecies: SpeciesId = collectionStore.value.selected;
 let renderTree = createTreeRenderer(el('tree'));
 let roundReward = new RoundReward();
@@ -221,6 +223,10 @@ function startDemo() {
   cancelLoop();
   mic.stop();
   calibration = null;
+  if (!demoInitialized) {
+    demoCollection = demoFromCollection(collectionStore.refresh());
+    demoInitialized = true;
+  }
   source = 'demo';
   if (state.phase === 'fruit') {
     newRound();
@@ -544,7 +550,7 @@ function renderCollection() {
   text(
     'shop-context',
     demo
-      ? '演示商店 · 体验金币与体验解锁仅在本页有效，与课堂收藏分开。本轮使用过模拟输入，切换麦克风后也只结算体验金币。'
+      ? '演示商店 · 体验金币与体验解锁仅在本页有效，可体验已拥有树种，与课堂钱包分开。本轮使用过模拟输入，切换麦克风后也只结算体验金币。'
       : '课堂收藏 · 本轮未完成前切换树种，将在下一轮生效。打开商店会暂停照料，返回后请手动继续。',
   );
   text(
