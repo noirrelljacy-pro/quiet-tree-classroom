@@ -1527,3 +1527,274 @@ body.presenting .stages li > span {
     font-size: 23px;
   }
 }
+
+/* A local collection, kept secondary to the living tree. */
+.garden-collection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 17px 0 0;
+  position: relative;
+  z-index: 1;
+}
+.species-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  color: #4a654b;
+  font-size: 12px;
+}
+.species-label i {
+  font-style: normal;
+  font-size: 23px;
+  line-height: 1;
+  color: #78946a;
+}
+#next-species {
+  font-size: 10px;
+  font-weight: 400;
+  color: #68745e;
+}
+.wallet-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid #e2d9b9;
+  border-radius: 30px;
+  background: #fffbed;
+  min-height: 38px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.wallet-button b,
+.shop-wallet b {
+  color: #73551f;
+  font-variant-numeric: tabular-nums;
+}
+.coin-icon {
+  display: inline-grid;
+  place-items: center;
+  color: #b08834;
+  background: #f6dfa3;
+  border: 1px solid #d8b961;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+.shop-link {
+  margin-left: 6px;
+  padding-left: 10px;
+  border-left: 1px solid #e3d6ae;
+  color: #536d4a;
+}
+.garden-collection + .tree-message {
+  margin-top: 15px;
+}
+.reward-banner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  align-self: center;
+  border: 1px solid #e3d4a1;
+  background: #fff6d9;
+  color: #715721;
+  padding: 9px 16px;
+  margin: 0 auto 13px;
+  border-radius: 30px;
+  font-size: 12px;
+  max-width: 100%;
+}
+dialog.shop-dialog {
+  width: calc(100% - 32px);
+  max-width: 1060px;
+  max-height: calc(100dvh - 40px);
+  padding: 32px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.shop-dialog h2 {
+  font-family: 'KaiTi', 'STKaiti', serif;
+  font-size: 28px;
+  margin: 6px 30px 12px 0;
+}
+.shop-dialog .shop-intro {
+  margin: 0;
+  color: #61715e;
+  font-size: 13px;
+}
+.shop-wallet {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: #f5f3e5;
+  border: 1px solid #e6dfc7;
+  border-radius: 13px;
+  padding: 14px 18px;
+  margin-top: 20px;
+}
+.shop-wallet > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.shop-wallet b {
+  font-size: 23px;
+}
+#shop-distance {
+  color: #736038;
+  font-size: 12px;
+}
+.shop-dialog .shop-context {
+  margin: 12px 0 18px;
+  font-size: 11px;
+  color: #64705e;
+  line-height: 1.8;
+}
+.species-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+.species-card {
+  border: 1px solid #dde3d3;
+  border-radius: 15px;
+  padding: 12px;
+  background: #fbfcf5;
+  min-width: 0;
+}
+.species-card[data-selected='true'] {
+  border-color: #78936c;
+  background: #f0f5e7;
+  box-shadow: 0 0 0 1px #78936c;
+}
+.species-preview {
+  margin: -4px -6px 6px;
+  border-radius: 12px;
+  background: radial-gradient(ellipse at 50% 50%, #f5f3df, transparent 73%);
+}
+.species-preview svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.species-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.species-card h3 {
+  font-size: 16px;
+}
+.owned-tag {
+  font-size: 10px;
+  color: #65735b;
+}
+.species-dialog p,
+.species-card p {
+  font-size: 11px;
+  color: #64705e;
+  line-height: 1.8;
+}
+.shop-dialog .species-card > p {
+  margin: 9px 0 13px;
+  min-height: 40px;
+}
+.species-card button {
+  width: 100%;
+  padding: 8px 5px;
+  font-size: 11px;
+  min-height: 44px;
+}
+.shop-dialog .species-cost {
+  min-height: 0 !important;
+  font-size: 10px;
+  margin: 8px 0 0 !important;
+}
+.shop-dialog .shop-status {
+  padding: 13px 15px;
+  background: #eef3e6;
+  border-radius: 11px;
+  font-size: 12px;
+  margin: 20px 0 8px;
+}
+.shop-dialog .shop-footnote {
+  margin: 10px 0;
+  font-size: 10px;
+  color: #697363;
+}
+.shop-close-bottom {
+  display: block;
+  margin: 18px auto 0;
+}
+body.presenting .garden-collection {
+  justify-content: center;
+  gap: 25px;
+  margin-top: 15px;
+}
+body.presenting .garden-collection + .tree-message {
+  margin-top: 15px;
+}
+@media (max-width: 900px) {
+  .species-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  dialog.shop-dialog {
+    padding: 24px 18px;
+  }
+  .species-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+  }
+  .shop-dialog h2 {
+    font-size: 23px;
+  }
+  .shop-wallet {
+    padding: 12px;
+  }
+  .garden-collection {
+    gap: 8px;
+  }
+  .wallet-button {
+    font-size: 10px;
+    padding: 6px 9px;
+    gap: 4px;
+  }
+  .shop-link {
+    margin-left: 2px;
+    padding-left: 7px;
+  }
+  .reward-banner {
+    font-size: 11px;
+    border-radius: 12px;
+  }
+}
+@media (max-width: 360px) {
+  .species-grid {
+    grid-template-columns: 1fr;
+  }
+  .species-preview svg {
+    max-height: 160px;
+  }
+}
+@media (prefers-contrast: more) {
+  .species-card {
+    border-color: #65735b;
+  }
+  .species-card[data-selected='true'] {
+    outline: 2px solid #355e44;
+  }
+}

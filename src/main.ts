@@ -4,7 +4,17 @@ import { initialState, advance, smooth } from './engine';
 import { Calibration } from './calibration';
 import { Microphone, microphoneError } from './audio';
 import { loadSettings, saveSettings } from './preferences';
-import { treeMarkup, createTreeRenderer } from './tree';
+import { treeMarkup, createTreeRenderer, speciesPreview } from './tree';
+import { SPECIES, DEFAULT_SPECIES, speciesById, isSpecies, type SpeciesId } from './species';
+import {
+  browserCollectionStore,
+  emptyCollection,
+  applyCollectionAction,
+  ECONOMY,
+  COLLECTION_KEY,
+  RoundReward,
+  type CollectionAction,
+} from './collection';
 import { createVolumeView, setText, setStyle, setAttribute } from './dom';
 import { STAGES, treeVisual, feedback, elapsedLabel } from './visual-model';
 import { phaseText } from './strings';
@@ -18,8 +28,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div class="workspace">
       <section class="garden" aria-label="小树课堂">
         <div class="garden-top"><span id="mode" class="badge">尚未开始</span><span class="round-label">第 <b id="round">01</b> 轮 <span aria-hidden="true">·</span> <time id="elapsed" aria-label="本轮有效运行时长">00:00</time></span></div>
+        <div class="garden-collection"><span class="species-label"><i aria-hidden="true">⌁</i> <b id="planted-name">香樟</b><span id="next-species"></span></span><button id="open-shop" class="wallet-button" aria-haspopup="dialog"><span class="coin-icon" aria-hidden="true">●</span> <b id="wallet-coins">0</b><span id="wallet-kind">金币</span><span class="shop-link">树种商店 ↗</span></button></div>
         <div class="tree-message"><p class="eyebrow" id="stage">一颗种子，一点期待</p><h2 id="headline" aria-live="polite" aria-atomic="true"></h2><p id="reason"></p></div>
         <div id="tree" class="tree">${treeMarkup()}</div>
+        <div id="reward" class="reward-banner" role="status" hidden><span class="coin-icon" aria-hidden="true">●</span><span id="reward-copy"></span></div>
         <div class="growth"><div class="growth-caption"><span>本轮成长 <b id="growth-value">0%</b></span><span id="remaining">等待开始</span></div><div class="growth-track" aria-hidden="true"><div id="growth-fill"></div></div><progress id="growth-progress" class="sr-only" value="0" max="100" aria-label="本轮成长进度"></progress><ol class="stages" aria-label="成长阶段"><li data-step="0"><span aria-hidden="true">1</span>幼苗</li><li data-step="1"><span aria-hidden="true">2</span>小树</li><li data-step="2"><span aria-hidden="true">3</span>成熟树</li><li data-step="3"><span aria-hidden="true">4</span>果实</li></ol></div>
         <div class="presentation-controls"><button id="present-pause" class="outline">暂停</button><button id="exit-present" class="outline">退出展示</button></div>
       </section>
@@ -45,8 +57,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     </div>
     <footer><span>一棵小树，一段专注的时光。</span><span>温和反馈 · 没有声音惩罚</span></footer>
   </main>
-  <dialog id="guide"><form method="dialog"><button class="dialog-close" aria-label="关闭使用指南">×</button></form><p class="eyebrow">HELLO, LITTLE TREE</p><h2>用一点安静，照料一棵树。</h2><ol><li><b>开启麦克风</b><p>允许浏览器使用麦克风，用 5 秒校准环境底噪，也可以跳过。</p></li><li><b>选择适合课堂的节奏</b><p>默认累计安静 3 分钟结果。持续嘈杂 3 秒提醒，8 秒开始下垂；短暂咳嗽不会清空成长。</p></li><li><b>让小树陪伴课堂</b><p>恢复安静 2 秒后，叶片逐渐舒展，再继续成长。课堂展示模式可突出小树，按 Esc 退出。</p></li></ol><p>需要 HTTPS 或 localhost 与新版浏览器。手机和平板可使用；具体设备增益会影响相对音量，请先校准。暂停和切到后台会释放麦克风，回到页面后需手动继续。</p><p>声音只在本地内存里计算强弱，不录音、不上传、不转写。演示模式完全不使用麦克风。</p><form method="dialog"><button class="primary">开始照料小树</button></form></dialog>
-  <dialog id="confirm"><h2>重新种下这棵小树？</h2><p>本轮成长会归零，设置保留。你也可以取消，继续照料。</p><div class="dialog-actions"><button id="cancel-reset" class="outline" autofocus>取消</button><button id="confirm-reset" class="primary">确认重新开始</button></div></dialog>`;
+  <dialog id="guide"><form method="dialog"><button class="dialog-close" aria-label="关闭使用指南">×</button></form><p class="eyebrow">HELLO, LITTLE TREE</p><h2>用一点安静，照料一棵树。</h2><ol><li><b>开启麦克风</b><p>允许浏览器使用麦克风，用 5 秒校准环境底噪，也可以跳过。</p></li><li><b>选择适合课堂的节奏</b><p>默认累计安静 3 分钟结果。持续嘈杂 3 秒提醒，8 秒开始下垂；短暂咳嗽不会清空成长。</p></li><li><b>让小树陪伴课堂</b><p>恢复安静 2 秒后，叶片逐渐舒展，再继续成长。课堂展示模式可突出小树，按 Esc 退出。</p></li></ol><p>需要 HTTPS 或 localhost 与新版浏览器。手机和平板可使用；具体设备增益会影响相对音量，请先校准。暂停和切到后台会释放麦克风，回到页面后需手动继续。</p><p>声音只在本地内存里计算强弱，不录音、不上传、不转写。每棵完整结果奖励 2 金币，120 金币解锁新树种；收藏仅存本机。演示模式完全不使用麦克风，体验金币独立且不保存。</p><form method="dialog"><button class="primary">开始照料小树</button></form></dialog>
+  <dialog id="shop" class="shop-dialog" aria-labelledby="shop-title"><form method="dialog"><button class="dialog-close" aria-label="关闭树种商店">×</button></form><p class="eyebrow">A LITTLE FOREST TO GROW</p><h2 id="shop-title">把安静，收进小小森林。</h2><p class="shop-intro">每养成一棵完整小树，获得 <b>2 金币</b>。新树种每种 <b>120 金币</b>，解锁后可反复种植。</p><div class="shop-wallet"><span><span class="coin-icon" aria-hidden="true">●</span> <b id="shop-coins">0</b> <span id="shop-currency">金币</span></span><span id="shop-distance"></span></div><p id="shop-context" class="shop-context"></p><div class="species-grid">${SPECIES.map((s) => `<article class="species-card" data-species-card="${s.id}"><div class="species-preview">${speciesPreview(s.id)}</div><div class="species-card-heading"><h3>${s.name}</h3><span id="owned-${s.id}" class="owned-tag"></span></div><p>${s.description}</p><button id="choose-${s.id}" class="outline" data-choose="${s.id}"></button><button id="buy-${s.id}" class="primary" data-buy="${s.id}"></button><p id="cost-${s.id}" class="species-cost"></p></article>`).join('')}</div><p id="shop-status" class="shop-status" role="status" aria-live="polite">选一棵喜欢的树，让下一段安静有新的期待。</p><p id="collection-storage" class="shop-footnote"></p><form method="dialog"><button class="outline shop-close-bottom">返回照料台</button></form></dialog>
+  <dialog id="confirm"><h2>重新种下这棵小树？</h2><p>本轮成长会归零，金币、已解锁树种和设置都保留。你也可以取消，继续照料。</p><div class="dialog-actions"><button id="cancel-reset" class="outline" autofocus>取消</button><button id="confirm-reset" class="primary">确认重新开始</button></div></dialog>`;
 
 const nodes = new Map<string, HTMLElement>();
 function el<T extends HTMLElement = HTMLElement>(id: string): T {
@@ -74,7 +87,16 @@ let demoPulseRemaining = 0;
 let controlsKey = '';
 const mic = new Microphone();
 const clock = new FrameClock();
-const renderTree = createTreeRenderer(el('tree'));
+const collectionStore = browserCollectionStore();
+let demoCollection = emptyCollection();
+let plantedSpecies: SpeciesId = collectionStore.value.selected;
+let renderTree = createTreeRenderer(el('tree'));
+let roundReward = new RoundReward();
+let rewardMessage = '';
+let rewardPending = false;
+let shopPending = false;
+let collectionUIKey = '';
+applyTreeSpecies(plantedSpecies);
 const drawVolume = createVolumeView(el('meter-fill'), el('level'), el('volume-meter'));
 const stageNodes = [...document.querySelectorAll<HTMLElement>('[data-step]')];
 function notice(message: string) {
@@ -116,7 +138,10 @@ function tick(now: number) {
       notice(`校准完成，建议阈值 ${settings.threshold}。可调整设置，再点击开始本轮。`);
     }
   } else if (session === 'running') {
+    const previous = state;
     state = advance(state, level, dt, settings);
+    const reward = roundReward.complete(previous, state);
+    if (reward) void grantReward(reward);
     if (state.phase === 'fruit') {
       session = 'completed';
       mic.stop();
@@ -135,6 +160,7 @@ async function connect(calibrate: boolean) {
   cancelLoop();
   mic.stop();
   source = 'mic';
+  updatePlantedIfEmpty();
   session = 'connecting';
   notice('请在浏览器中允许麦克风。也可以结束等待或进入演示模式。');
   render();
@@ -197,9 +223,11 @@ function startDemo() {
   calibration = null;
   source = 'demo';
   if (state.phase === 'fruit') {
-    state = initialState();
+    newRound();
     round++;
   }
+  roundReward.useDemo();
+  updatePlantedIfEmpty();
   session = 'running';
   level = demoLevel;
   notice('演示模式 · 用下方模拟音量，体验安静、嘈杂与恢复。');
@@ -365,11 +393,14 @@ function render() {
   }
   el('tree').classList.toggle('is-paused', !active);
   renderTree(state);
+  renderCollection();
+  el('reward').hidden = !rewardMessage;
+  text('reward-copy', rewardMessage);
   setAttribute(el('headline'), 'data-phase', state.phase);
 }
 el('start').onclick = () => {
   if (session === 'completed') {
-    state = initialState();
+    newRound();
     round++;
   }
   if (session === 'idle') void connect(true);
@@ -384,7 +415,8 @@ el('stop').onclick = stop;
 el('demo').onclick = startDemo;
 el('real-input').onclick = () => {
   if (state.phase === 'fruit') {
-    state = initialState();
+    source = 'mic';
+    newRound();
     round++;
   }
   void connect(true);
@@ -432,10 +464,184 @@ el('cancel-reset').onclick = () => el<HTMLDialogElement>('confirm').close();
 el('confirm-reset').onclick = () => {
   el<HTMLDialogElement>('confirm').close();
   pause('已重新种下幼苗。点击继续开始本轮。');
-  state = initialState();
+  newRound();
   level = 0;
   render();
 };
+
+function usingDemoCollection() {
+  return source === 'demo' || roundReward.isDemo;
+}
+function currentCollection() {
+  return usingDemoCollection() ? demoCollection : collectionStore.value;
+}
+function applyTreeSpecies(id: SpeciesId) {
+  plantedSpecies = id;
+  el('tree').innerHTML = treeMarkup(id);
+  renderTree = createTreeRenderer(el('tree'), id);
+}
+function updatePlantedIfEmpty() {
+  if (state.progress === 0 && plantedSpecies !== currentCollection().selected)
+    applyTreeSpecies(currentCollection().selected);
+}
+function newRound() {
+  state = initialState();
+  roundReward = new RoundReward();
+  if (source === 'demo') roundReward.useDemo();
+  rewardMessage = '';
+  applyTreeSpecies(currentCollection().selected);
+}
+async function grantReward(kind: 'classroom' | 'demo') {
+  rewardPending = true;
+  rewardMessage = '正在收好这份安静…';
+  const roundAtCompletion = roundReward;
+  let message: string;
+  if (kind === 'demo') {
+    demoCollection = applyCollectionAction(demoCollection, { type: 'reward' }).collection;
+    message = '+2 体验金币 · 演示收获，不计入课堂金币';
+  } else {
+    const outcome = await collectionStore.dispatch({ type: 'reward' });
+    message = outcome.saved
+      ? '+2 金币 · 这份专注，已收入小小森林'
+      : '+2 临时金币 · 本次有效，浏览器未能保存';
+  }
+  rewardPending = false;
+  if (roundAtCompletion === roundReward) rewardMessage = message;
+  render();
+}
+function renderCollection() {
+  const c = currentCollection();
+  const demo = usingDemoCollection();
+  const key = JSON.stringify([
+    c,
+    demo,
+    plantedSpecies,
+    state.progress === 0,
+    collectionStore.persistent,
+    shopPending,
+    rewardPending,
+  ]);
+  if (key === collectionUIKey) return;
+  collectionUIKey = key;
+  const currency = demo ? '体验金币' : collectionStore.persistent ? '金币' : '临时金币';
+  text('planted-name', speciesById(plantedSpecies).name);
+  text(
+    'next-species',
+    c.selected === plantedSpecies ? '' : '下轮 · ' + speciesById(c.selected).name,
+  );
+  text('wallet-coins', String(c.coins));
+  text('wallet-kind', currency);
+  text('shop-coins', String(c.coins));
+  text('shop-currency', currency);
+  text(
+    'shop-distance',
+    c.unlocked.length === SPECIES.length
+      ? '小小森林，已经集齐'
+      : c.coins >= ECONOMY.price
+        ? '可以解锁一棵新树了'
+        : '再养成 ' + Math.ceil((ECONOMY.price - c.coins) / ECONOMY.reward) + ' 棵，可解锁新树种',
+  );
+  text(
+    'shop-context',
+    demo
+      ? '演示商店 · 体验金币与体验解锁仅在本页有效，与课堂收藏分开。本轮使用过模拟输入，切换麦克风后也只结算体验金币。'
+      : '课堂收藏 · 本轮未完成前切换树种，将在下一轮生效。打开商店会暂停照料，返回后请手动继续。',
+  );
+  text(
+    'collection-storage',
+    demo
+      ? '刷新会清空演示收藏，课堂金币不受影响。'
+      : collectionStore.persistent
+        ? '金币、已解锁树种与选择仅保存在此浏览器；清理网站数据会清除收藏，无账号与云同步。'
+        : '当前无法安全保存收藏（存储或浏览器锁不可用），金币与解锁仅在此页有效。',
+  );
+  for (const species of SPECIES) {
+    const owned = c.unlocked.includes(species.id);
+    const selected = c.selected === species.id;
+    const choose = el<HTMLButtonElement>('choose-' + species.id);
+    const buy = el<HTMLButtonElement>('buy-' + species.id);
+    choose.hidden = !owned;
+    choose.disabled = selected || shopPending || rewardPending;
+    choose.textContent = selected ? '已选择' : state.progress > 0 ? '下一轮种这棵' : '种这棵';
+    buy.hidden = owned;
+    buy.disabled = c.coins < ECONOMY.price || shopPending || rewardPending;
+    buy.textContent = '120 ' + currency + ' · 解锁';
+    text(
+      'cost-' + species.id,
+      owned
+        ? species.id === DEFAULT_SPECIES
+          ? '初始赠送 · 可反复种植'
+          : '已解锁 · 可反复种植'
+        : c.coins >= ECONOMY.price
+          ? '解锁后点击选择种植'
+          : '还差 ' + (ECONOMY.price - c.coins) + ' ' + currency,
+    );
+    text('owned-' + species.id, selected ? '已选择' : owned ? '已拥有' : '待解锁');
+    setAttribute(
+      document.querySelector<HTMLElement>('[data-species-card="' + species.id + '"]')!,
+      'data-selected',
+      String(selected),
+    );
+    setAttribute(choose, 'aria-label', species.name + '，' + choose.textContent);
+    setAttribute(buy, 'aria-label', '解锁' + species.name + '，120 ' + currency);
+  }
+}
+el('open-shop').onclick = () => {
+  if (['running', 'calibrating', 'connecting'].includes(session))
+    pause('打开树种商店，已暂停照料并释放麦克风。返回后请点击继续。');
+  collectionStore.refresh();
+  renderCollection();
+  text('shop-status', '选一棵喜欢的树，让下一段安静有新的期待。');
+  el<HTMLDialogElement>('shop').showModal();
+};
+async function collectionAction(action: CollectionAction) {
+  if (shopPending || rewardPending) return;
+  const demo = usingDemoCollection();
+  shopPending = true;
+  renderCollection();
+  const outcome = demo
+    ? applyCollectionAction(demoCollection, action)
+    : await collectionStore.dispatch(action);
+  if (demo) demoCollection = outcome.collection;
+  shopPending = false;
+  if (action.type === 'purchase') {
+    const name = speciesById(action.id).name;
+    text(
+      'shop-status',
+      outcome.result === 'unlocked'
+        ? name + '已解锁！花费 120 ' + (demo ? '体验金币' : '金币') + '，现在可以选择种植。'
+        : outcome.result === 'owned'
+          ? name + '已经拥有，不会重复扣款。'
+          : '金币不足，再照料几棵小树吧。',
+    );
+    // Move focus off a now-hidden purchase button to the newly available choice.
+    renderCollection();
+    if (outcome.result === 'unlocked') el('choose-' + action.id).focus();
+  } else if (action.type === 'select') {
+    updatePlantedIfEmpty();
+    text(
+      'shop-status',
+      speciesById(action.id).name +
+        (state.progress > 0 ? '将在下一轮种下，本轮小树继续保留。' : '已种下，准备好后开始照料。'),
+    );
+  }
+  render();
+}
+for (const button of document.querySelectorAll<HTMLButtonElement>('[data-buy], [data-choose]')) {
+  button.onclick = () => {
+    const id = button.dataset.buy ?? button.dataset.choose;
+    if (isSpecies(id))
+      void collectionAction({ type: button.dataset.buy ? 'purchase' : 'select', id });
+  };
+}
+window.addEventListener('storage', (event) => {
+  if (event.key === COLLECTION_KEY || event.key === null) {
+    collectionStore.refresh();
+    updatePlantedIfEmpty();
+    render();
+  }
+});
+
 function setPresentation(value: boolean) {
   presentation = value;
   document.body.classList.toggle('presenting', value);

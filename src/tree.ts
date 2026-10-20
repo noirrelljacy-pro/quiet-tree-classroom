@@ -1,4 +1,5 @@
 import type { TreeState } from './engine';
+import { DEFAULT_SPECIES, speciesById, type SpeciesId } from './species';
 import { setAttribute, setStyle, setText } from './dom';
 import { STAGES, treeVisual } from './visual-model';
 // Original deterministic illustration. Columns: anchor, angle, size, growth cohort.
@@ -35,16 +36,97 @@ const LEAVES = [
   [365, 67, 27, 0.82, 3],
   [408, 139, 54, 0.76, 3],
 ] as const;
-export function treeMarkup(): string {
-  return `<svg class="landscape" viewBox="0 0 640 420" role="img" aria-labelledby="tree-title">
+
+const LEAF_PATHS: Record<SpeciesId, string> = {
+  camphor: 'M0 12C-29 6-43-15-34-34C-26-51-6-54 7-45C24-33 24-7 0 12Z',
+  maple:
+    'M0 12L-8-5-28 0-23-14-43-28-23-31-28-47-10-38 0-62 10-38 28-47 23-31 43-28 23-14 28 0 8-5Z',
+  cherry:
+    'M0 3C-21 20-38-3-22-16C-47-28-25-51-9-35C-12-65 19-65 14-36C39-54 53-27 29-17C51 3 25 22 11 3Q5 10 0 3Z',
+  ginkgo: 'M0 12Q-9-5-36-21Q-43-30-36-42Q-18-55-3-42L0-36 4-42Q21-57 39-42Q47-30 38-21Q10-4 0 12Z',
+  pine: 'M0 12L-35 0-22-6-43-18-26-22-38-35-17-32-21-48-7-39 0-65 8-39 23-48 18-32 39-35 28-22 44-18 23-6 36 0Z',
+};
+function leafGraphic(id: SpeciesId, fill: string) {
+  return (
+    '<path d="' +
+    LEAF_PATHS[id] +
+    '" fill="' +
+    fill +
+    '"/>' +
+    (id === 'cherry'
+      ? '<circle cx="5" cy="-21" r="4.5" fill="#c89563"/><g stroke="#f5ebcb" stroke-width="1.3"><path d="M5-21v-9m0 9 8-4m-8 4 6 6m-6-6-7 6m7-6-8-4"/></g>'
+      : '<path d="M0 8V-35M0-6-17-27M0-5 18-27" stroke="#fff8d8" stroke-width="1.1" opacity=".48" fill="none" stroke-linecap="round"/>')
+  );
+}
+function leafPosition(
+  id: SpeciesId,
+  x: number,
+  y: number,
+  angle: number,
+): [number, number, number] {
+  if (id === 'cherry') return [320 + (x - 320) * 1.12, y * 0.67 + 76, angle * 0.7];
+  if (id === 'ginkgo') return [320 + (x - 320) * 0.86, y, angle * 0.8];
+  if (id === 'maple') return [320 + (x - 320) * 1.03, y * 0.92 + 12, angle * 0.65];
+  if (id === 'pine') return [320 + (x - 320) * (0.25 + (0.8 * y) / 278), y, angle * 0.18];
+  return [x, y, angle];
+}
+function foliageMarkup(id: SpeciesId, preview = false) {
+  const colors = speciesById(id).colors;
+  return LEAVES.map(([x, y, angle, size, group], i) => {
+    const [px, py, turn] = leafPosition(id, x, y, angle);
+    const graphic = leafGraphic(
+      id,
+      preview ? colors[[2, 4, 0][i % 3]] : 'url(#leaf-' + ['mid', 'deep', 'light'][i % 3] + ')',
+    );
+    return (
+      '<g transform="translate(' +
+      px +
+      ' ' +
+      py +
+      ') rotate(' +
+      turn +
+      ') scale(' +
+      size * (id === 'cherry' ? 0.78 : 1) +
+      ')"><g' +
+      (preview
+        ? ''
+        : ' class="leaf-motion" data-cohort="' +
+          group +
+          '" data-direction="' +
+          (x < 320 ? -1 : 1) +
+          '"') +
+      '>' +
+      graphic +
+      '</g></g>'
+    );
+  }).join('');
+}
+export function speciesPreview(id: SpeciesId) {
+  return (
+    '<svg viewBox="60 0 520 410" aria-hidden="true" focusable="false"><ellipse cx="320" cy="366" rx="213" ry="23" fill="#dce6ca"/><path d="M310 368Q322 267 315 119L322 110Q327 263 332 368Z" fill="#aa8b60"/>' +
+    foliageMarkup(id, true) +
+    '</svg>'
+  );
+}
+function fruitGraphic(id: SpeciesId) {
+  if (id === 'pine')
+    return '<ellipse cy="2" rx="10" ry="17" fill="url(#fruit)"/><path d="M-8-6 8 4M-9 1 6 11M-7 9 4 15M8-6-8 4M9 1-6 11" stroke="#e1bf8d" stroke-width="1.2" fill="none"/>';
+  if (id === 'maple')
+    return '<path d="M0 3Q-32-27-29-3Q-25 14 0 3Q26 14 29-3Q32-27 0 3Z" fill="url(#fruit)"/><path d="M-20 0 0 3 20 0" stroke="#f7dfac" fill="none"/>';
+  return '<circle r="13" fill="url(#fruit)"/><ellipse cx="-4" cy="-4" rx="3" ry="4" fill="#ffe6a2" opacity=".6"/>';
+}
+
+export function treeMarkup(id: SpeciesId = DEFAULT_SPECIES): string {
+  const { colors, fruit } = speciesById(id);
+  return `<svg data-species="${id}" class="landscape" viewBox="0 0 640 420" role="img" aria-labelledby="tree-title">
   <title id="tree-title">幼苗，成长 0%，叶片舒展</title>
   <defs>
-    <linearGradient id="leaf-light" x2="1" y2="1"><stop stop-color="#b9ce87"/><stop offset="1" stop-color="#7ea46b"/></linearGradient>
-    <linearGradient id="leaf-mid" x2="1" y2="1"><stop stop-color="#8fb371"/><stop offset="1" stop-color="#507e55"/></linearGradient>
-    <linearGradient id="leaf-deep" x2="1" y2="1"><stop stop-color="#6d975b"/><stop offset="1" stop-color="#38694d"/></linearGradient>
+    <linearGradient id="leaf-light" x2="1" y2="1"><stop stop-color="${colors[0]}"/><stop offset="1" stop-color="${colors[1]}"/></linearGradient>
+    <linearGradient id="leaf-mid" x2="1" y2="1"><stop stop-color="${colors[2]}"/><stop offset="1" stop-color="${colors[3]}"/></linearGradient>
+    <linearGradient id="leaf-deep" x2="1" y2="1"><stop stop-color="${colors[4]}"/><stop offset="1" stop-color="${colors[5]}"/></linearGradient>
     <linearGradient id="bark" x2="1" y2="0"><stop stop-color="#997d56"/><stop offset=".65" stop-color="#bc9b68"/><stop offset="1" stop-color="#94794f"/></linearGradient>
     <linearGradient id="island" x2="0" y2="1"><stop stop-color="#d0dfad"/><stop offset="1" stop-color="#e2e9cd"/></linearGradient>
-    <linearGradient id="fruit" x2="1" y2="1"><stop stop-color="#f2cb75"/><stop offset="1" stop-color="#d69a49"/></linearGradient>
+    <linearGradient id="fruit" x2="1" y2="1"><stop stop-color="${fruit[0]}"/><stop offset="1" stop-color="${fruit[1]}"/></linearGradient>
   </defs>
   <g class="scene-sky" aria-hidden="true">
     <circle cx="479" cy="97" r="53" fill="#f0e5ba" opacity=".18"/><circle cx="479" cy="97" r="38" fill="#eadba8" opacity=".62"/>
@@ -61,7 +143,7 @@ export function treeMarkup(): string {
       <path d="M318 257Q263 228 230 195M322 231Q379 212 411 180M319 210Q289 176 283 142M320 178Q345 142 349 103" stroke-width="6"/>
       <path d="M262 279L181 236M378 277L456 235M264 228L251 162M374 211L379 147M291 170L266 81M320 139L318 67" stroke-width="3.5"/>
     </g>
-    <g id="leaves">${LEAVES.map(([x, y, angle, size, group], i) => `<g transform="translate(${x} ${y}) rotate(${angle}) scale(${size})"><g class="leaf-motion" data-cohort="${group}" data-direction="${x < 320 ? -1 : 1}"><path d="M0 12C-29 6-43-15-34-34C-26-51-6-54 7-45C24-33 24-7 0 12Z" fill="url(#leaf-${['mid', 'deep', 'light'][i % 3]})"/><path d="M-1 7Q-10-15-19-34M-7-8l-16-4M-12-20l8-13" stroke="#e2edbe" stroke-width="1.1" opacity=".5" fill="none" stroke-linecap="round"/></g></g>`).join('')}</g>
+    <g id="leaves">${foliageMarkup(id)}</g>
     <g id="tree-fruits" class="fruits">${[
       [253, 253],
       [387, 236],
@@ -69,7 +151,7 @@ export function treeMarkup(): string {
     ]
       .map(
         ([x, y]) =>
-          `<g transform="translate(${x} ${y})"><path d="M0-10q-2-9 3-13" fill="none" stroke="#55764e" stroke-width="2"/><path d="M2-18q11-8 15-2-8 7-15 2" fill="#72925b"/><circle r="13" fill="url(#fruit)"/><ellipse cx="-4" cy="-4" rx="3" ry="4" fill="#ffe6a2" opacity=".6"/></g>`,
+          `<g transform="translate(${x} ${y})"><path d="M0-10q-2-9 3-13" fill="none" stroke="#55764e" stroke-width="2"/><path d="M2-18q11-8 15-2-8 7-15 2" fill="#72925b"/>${fruitGraphic(id)}</g>`,
       )
       .join('')}</g>
   </g>
@@ -82,7 +164,7 @@ export function treeMarkup(): string {
   <g id="celebration" class="celebration" fill="#d4b15d" aria-hidden="true"><path d="M190 127l3 8 8 3-8 3-3 8-3-8-8-3 8-3ZM448 112l2 6 6 2-6 2-2 6-2-6-6-2 6-2ZM470 284l2 6 6 2-6 2-2 6-2-6-6-2 6-2Z"/></g>
   </svg>`;
 }
-export function createTreeRenderer(element: HTMLElement) {
+export function createTreeRenderer(element: HTMLElement, id: SpeciesId = DEFAULT_SPECIES) {
   const adult = element.querySelector<SVGElement>('#adult-tree')!;
   const sprout = element.querySelector<SVGElement>('#seedling')!;
   const branches = element.querySelector<SVGElement>('#branches')!;
@@ -125,7 +207,7 @@ export function createTreeRenderer(element: HTMLElement) {
     setAttribute(element, 'data-stage', String(v.stage));
     setText(
       title,
-      `${STAGES[v.stage]}，成长 ${Math.floor(state.progress * 100)}%，${state.health < 1 ? '叶片正在恢复或下垂' : '叶片舒展'}`,
+      `${speciesById(id).name} · ${STAGES[v.stage]}，成长 ${Math.floor(state.progress * 100)}%，${state.health < 1 ? '叶片正在恢复或下垂' : '叶片舒展'}`,
     );
   };
 }
