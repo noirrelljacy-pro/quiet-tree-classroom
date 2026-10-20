@@ -1798,3 +1798,11 @@ body.presenting .garden-collection + .tree-message {
     outline: 2px solid #355e44;
   }
 }
+
+@media (max-width: 480px) {
+  .shop-dialog h2 {
+    font-size: 20px;
+    letter-spacing: -0.3px;
+    margin-right: 24px;
+  }
+}
